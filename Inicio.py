@@ -29,7 +29,7 @@ PALABRAS_POSITIVAS = {
     "gusta", "encanta", "amo", "amas", "aman", "recomienda", "recomendamos",
     "amor", "pasión", "entusiasmo", "esperanza", "progreso", "crecimiento",
     "transformación", "mejorar", "superar", "ganar", "triunfar", "destacar",
-    "liderar", "empoderar", "inspirar", "grandioso", "maravilla", "maravillosa", "maravilloso"
+    "liderar", "empoderar", "inspirar", "grandioso", "maravilla"
 }
 
 PALABRAS_NEGATIVAS = {
@@ -55,7 +55,6 @@ INTENSIFICADORES = {"muy", "bastante", "extremadamente", "totalmente", "completa
                     "absolutamente", "increíblemente", "enormemente", "sumamente"}
 NEGACIONES = {"no", "nunca", "jamás", "tampoco", "ni", "ningún", "ninguna", "sin"}
 
-
 def analizar_con_lexico(texto: str) -> dict:
     tokens = texto.lower().split()
     score = 0.0
@@ -63,8 +62,7 @@ def analizar_con_lexico(texto: str) -> dict:
     negacion_activa = False
 
     for i, token in enumerate(tokens):
-        token_limpio = ''.join(c for c in token if c.isalpha() or c == 'é' or c == 'á'
-                               or c == 'í' or c == 'ó' or c == 'ú' or c == 'ü' or c == 'ñ')
+        token_limpio = ''.join(c for c in token if c.isalpha() or c in 'éáíóúüñ')
 
         if token_limpio in NEGACIONES:
             negacion_activa = True
@@ -96,7 +94,6 @@ def analizar_con_lexico(texto: str) -> dict:
 
     num_palabras = len([t for t in tokens if len(t) > 2])
     subjetividad = min(1.0, total_sentiment_words / max(num_palabras, 1) * 3)
-
     return round(polaridad, 4), round(subjetividad, 4)
 
 @st.cache_resource
@@ -115,49 +112,26 @@ st.set_page_config(
     layout="centered"
 )
 
-# ─── Estilos CSS ──────────────────────────────────────────────
+# ─── Estilos CSS Personalizados ────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
-html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
-}
+html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
-.stApp {
-    background: #0d0d12;
-    color: #e8e8f0;
-}
+.stApp { background: #0d0d12; color: #e8e8f0; }
 
-.main-header {
-    text-align: center;
-    padding: 2.5rem 0 1.5rem 0;
-}
+.main-header { text-align: center; padding: 2.5rem 0 1.5rem 0; }
 .main-header h1 {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
     font-size: 2.6rem;
-    letter-spacing: -1px;
     background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 0.4rem;
-}
-.main-header p {
-    color: #6b7280;
-    font-size: 1rem;
-    font-weight: 300;
 }
 
-.result-card {
-    border-radius: 18px;
-    padding: 2rem;
-    margin: 1.5rem 0;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.04);
-    backdrop-filter: blur(10px);
-}
-
+/* Ajuste de colores en Badges */
 .sentiment-badge {
     display: inline-block;
     font-family: 'Syne', sans-serif;
@@ -166,144 +140,61 @@ html, body, [class*="css"] {
     padding: 0.5rem 1.8rem;
     border-radius: 50px;
     margin-bottom: 1rem;
-    letter-spacing: -0.5px;
+    color: #ffffff !important; /* Texto siempre blanco */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
-.badge-positivo { background: linear-gradient(135deg, #059669, #34d399); color: #fff; }
-.badge-negativo { background: linear-gradient(135deg, #dc2626, #f87171); color: #fff; }
-.badge-neutro   { background: linear-gradient(135deg, #4b5563, #9ca3af); color: #fff; }
+.badge-positivo { background: linear-gradient(135deg, #059669, #34d399); }
+.badge-negativo { background: linear-gradient(135deg, #dc2626, #f87171); }
+.badge-neutro   { background: linear-gradient(135deg, #4b5563, #9ca3af); }
 
-.metric-row {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
+.result-card {
+    border-radius: 18px;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
 }
+
 .metric-box {
-    flex: 1;
     background: rgba(255,255,255,0.06);
     border-radius: 12px;
-    padding: 1rem 1.2rem;
-    border: 1px solid rgba(255,255,255,0.06);
+    padding: 1rem;
     text-align: center;
 }
-.metric-box .label {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: #6b7280;
-    margin-bottom: 0.3rem;
-}
-.metric-box .value {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.7rem;
-    font-weight: 700;
-}
-
-.oracion-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.8rem;
-    padding: 0.75rem 1rem;
-    border-radius: 10px;
-    margin-bottom: 0.5rem;
-    background: rgba(255,255,255,0.03);
-    border-left: 3px solid transparent;
-}
-.oracion-positivo { border-color: #34d399; }
-.oracion-negativo { border-color: #f87171; }
-.oracion-neutro   { border-color: #6b7280; }
-
-/* Textarea - AQUÍ SE CAMBIÓ EL COLOR A NEGRO */
-.stTextArea textarea {
-    background: rgba(255,255,255,0.9) !important; /* Fondo más claro para que se vea el texto negro */
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    border-radius: 14px !important;
-    color: #000000 !important; /* Texto en color negro */
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.95rem !important;
-    resize: vertical;
-}
+.metric-box .value { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 700; }
 
 .stButton > button {
     background: linear-gradient(135deg, #7c3aed, #4f46e5) !important;
     color: white !important;
-    border: none !important;
     border-radius: 50px !important;
-    padding: 0.65rem 2.5rem !important;
     font-family: 'Syne', sans-serif !important;
     font-weight: 700 !important;
-    font-size: 1rem !important;
-    letter-spacing: 0.5px !important;
-    transition: all 0.2s ease !important;
-    width: 100%;
-}
-.stButton > button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 25px rgba(124,58,237,0.5) !important;
-}
-
-.ejemplo-chip {
-    display: inline-block;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px;
-    padding: 0.3rem 0.9rem;
-    font-size: 0.82rem;
-    cursor: pointer;
-    margin: 0.2rem;
-    color: #9ca3af;
-}
-
-hr { border-color: rgba(255,255,255,0.07) !important; }
-
-.streamlit-expanderHeader {
-    font-family: 'Syne', sans-serif;
-    color: #a78bfa !important;
 }
 </style>
 """, unsafe_allow_html=True)
-
-
-# ─── Funciones ────────────────────────────────────────────────
 
 def analizar_sentimiento_oracion(oracion: str) -> dict:
     pol, sub = None, None
     metodo = "lexicón"
 
+    # Capa 1: Traducción
     try:
         from deep_translator import GoogleTranslator
         texto_en = GoogleTranslator(source='es', target='en').translate(oracion)
         if texto_en:
             blob = TextBlob(texto_en)
-            pol_tb = blob.sentiment.polarity
-            sub_tb = blob.sentiment.subjectivity
-            if pol_tb != 0.0 or sub_tb != 0.0:
-                pol, sub = pol_tb, sub_tb
+            if blob.sentiment.polarity != 0.0 or blob.sentiment.subjectivity != 0.0:
+                pol, sub = blob.sentiment.polarity, blob.sentiment.subjectivity
                 metodo = "traducción"
-    except Exception:
-        pass
+    except: pass
 
-    if pol is None:
-        try:
-            blob_es = TextBlob(oracion)
-            pol_es = blob_es.sentiment.polarity
-            sub_es = blob_es.sentiment.subjectivity
-            if pol_es != 0.0:
-                pol, sub = pol_es, sub_es
-                metodo = "textblob-es"
-        except Exception:
-            pass
-
+    # Capa 2: Lexicón (Siempre disponible)
     if pol is None or pol == 0.0:
         pol_lex, sub_lex = analizar_con_lexico(oracion)
-        if pol_lex != 0.0:
-            if pol is not None and pol != 0.0:
-                pol = (pol + pol_lex) / 2
-                sub = (sub + sub_lex) / 2
-            else:
-                pol, sub = pol_lex, sub_lex
-                metodo = "lexicón"
+        pol, sub = pol_lex, sub_lex
+        metodo = "lexicón"
 
-  pol = pol if pol is not None else 0.0
+    pol = pol if pol is not None else 0.0
     sub = sub if sub is not None else 0.0
 
     if pol > 0.1:
@@ -313,7 +204,6 @@ def analizar_sentimiento_oracion(oracion: str) -> dict:
     else:
         etiqueta, emoji, css_clase = "Neutro", "⚪", "neutro"
 
-    # AQUÍ ESTÁ EL DICCIONARIO QUE CAUSABA EL ERROR
     return {
         "polaridad": round(pol, 4),
         "subjetividad": round(sub, 4),
@@ -322,3 +212,40 @@ def analizar_sentimiento_oracion(oracion: str) -> dict:
         "css": css_clase,
         "metodo": metodo
     }
+
+# El resto de tus funciones de visualización (gauge_chart, barras_oraciones) 
+# y la sección de INTERFAZ se mantienen igual, el CSS ya se encargará de los cambios de color.
+
+# ─── INTERFAZ (Continuación) ──────────────────────────────────
+st.markdown("""
+<div class="main-header">
+    <h1>🧠 Análisis de Sentimientos</h1>
+    <p>Detecta la polaridad emocional de textos en español</p>
+</div>
+""", unsafe_allow_html=True)
+
+texto_usuario = st.text_area("Escribe tu texto:", height=150, label_visibility="collapsed")
+analizar = st.button("✨ Analizar sentimiento")
+
+if analizar and texto_usuario.strip():
+    res = analizar_sentimiento_oracion(texto_usuario)
+    
+    st.markdown(f"""
+    <div class="result-card">
+        <div style="text-align:center;">
+            <span class="sentiment-badge badge-{res['css']}">{res['emoji']} {res['etiqueta']}</span>
+        </div>
+        <div class="metric-row" style="display: flex; gap: 10px; margin-top: 20px;">
+            <div class="metric-box" style="flex:1;">
+                <div style="color: #6b7280; font-size: 0.7rem;">POLARIDAD</div>
+                <div class="value" style="color:{'#34d399' if res['polaridad']>0.1 else '#f87171' if res['polaridad']<-0.1 else '#9ca3af'}">
+                    {res['polaridad']:+.3f}
+                </div>
+            </div>
+            <div class="metric-box" style="flex:1;">
+                <div style="color: #6b7280; font-size: 0.7rem;">SUBJETIVIDAD</div>
+                <div class="value" style="color:#60a5fa">{res['subjetividad']:.3f}</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
