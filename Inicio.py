@@ -303,7 +303,7 @@ def analizar_sentimiento_oracion(oracion: str) -> dict:
                 pol, sub = pol_lex, sub_lex
                 metodo = "lexicón"
 
-    pol = pol if pol is not None else 0.0
+  pol = pol if pol is not None else 0.0
     sub = sub if sub is not None else 0.0
 
     if pol > 0.1:
@@ -313,6 +313,12 @@ def analizar_sentimiento_oracion(oracion: str) -> dict:
     else:
         etiqueta, emoji, css_clase = "Neutro", "⚪", "neutro"
 
+    # AQUÍ ESTÁ EL DICCIONARIO QUE CAUSABA EL ERROR
     return {
         "polaridad": round(pol, 4),
         "subjetividad": round(sub, 4),
+        "etiqueta": etiqueta,
+        "emoji": emoji,
+        "css": css_clase,
+        "metodo": metodo
+    }
